@@ -1,0 +1,17 @@
+target
+.vscode
+# Ignore all files that end with .jar
+*.jar
+# Ignore all files that end with .war
+*.war
+# Ignore all files that end with .ear
+*.ear
+# Ignore all files that end with .class
+*.class
+# Ignore all files that end with .exe
+*.exe
+# Ignore all files that end with .dll
+*.dll
+# Ignore all files that end with .so
+*.so
+# Ingnoer all java files that is not necesary versioned
