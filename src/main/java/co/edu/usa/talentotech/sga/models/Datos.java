@@ -37,20 +37,22 @@ import lombok.NoArgsConstructor;
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @MappedSuperclass
 public abstract class Datos<T> implements Serializable {
-    @Column(name = "fechaCreacion")
+    @Column(name = "fecha_creacion")
     private Timestamp fechaCreacion;
-    @Column(name = "fechaActualizacion")
+    @Column(name = "fecha_actualizacion")
     private Timestamp fechaActualizacion;
     @JsonIncludeProperties(value = {
         "id",
         "nombre",
         "correo"
     })
+    @Column(name = "usuario_creacion")
     private T usuarioCreacion;
     @JsonIncludeProperties(value = {
         "id",
         "nombre",
         "correo"
     })
+    @Column(name = "usuario_actualizacion")
     private T usuarioActualizacion;
 }

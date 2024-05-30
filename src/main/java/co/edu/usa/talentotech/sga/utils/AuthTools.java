@@ -1,5 +1,8 @@
 package co.edu.usa.talentotech.sga.utils;
 
+// import org.springframework.security.authentication.ReactiveAuthenticationManager;
+// import org.springframework.security.core.Authentication;
+// import org.springframework.web.server.ServerWebExchange;
 
 
 import java.nio.charset.StandardCharsets;
@@ -11,10 +14,17 @@ import java.util.Base64;
 import java.util.Date;
 
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties.Jwt;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.stereotype.Component;
+
+import co.edu.usa.talentotech.sga.models.entities.User;
+import co.edu.usa.talentotech.sga.repositories.UserCrudRepository;
 import co.edu.usa.talentotech.sga.utils.constans.Sistema;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Header;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 
@@ -25,9 +35,13 @@ import io.jsonwebtoken.security.Keys;
  * Created on May 03, 2024
  * @author fdomoreno
  */
-
+@Component
+@EnableJpaRepositories
 public class AuthTools {
 
+
+    @Autowired
+    private static UserCrudRepository repository;
     /**
      * Metodo que encripta una cadena de texto
      * @param cadena
@@ -127,6 +141,52 @@ public class AuthTools {
         return Base64.getEncoder().encodeToString(cadena.getBytes());
     }
 
+    public static Boolean verifyJWT(String jwt, String clientId){
+        //CharSequence charJwt = ObtenerTokenBearer(jwt);
+        //This line will throw an exception if it is not a signed JWS (as expected)
+        try{
+            // User usuario = repository.findByClientId(clientId).get();
+            // if (usuario == null){
+            //     return false;
+            // }
+            // Claims claims = Jwts.parser()
+            // .verifyWith(getSigningSecretKey(usuario.getClientSecret(), clientId))
+            // .build()
+            // .parseSignedClaims(charJwt).getPayload();
+            // if (claims.get("clientId").toString().equals(clientId) && claims.getExpiration().after(new Date()) && claims.getIssuedAt().before(new Date())){
+            //     return true;
+            // }else{
+            //     return false;
+            // }
+            String charJwt = ObtenerTokenBearer(jwt);
+            String[] splitToken = charJwt.split("\\.");
+            Base64.Decoder decoder = Base64.getDecoder();
+            String header = new String(decoder.decode(splitToken[0]));
+            String payload = new String(decoder.decode(splitToken[1]));
+            System.out.println("Header: " + header);
+            System.out.println("Payload: " + payload);
+            int i = charJwt.lastIndexOf('.');
+            String withoutSignature = charJwt.substring(0, i+1);
+            io.jsonwebtoken.Jwt<Header, Claims> untrusted = Jwts.parser().build().parseClaimsJwt(withoutSignature);
+            for (String key : untrusted.getHeader().keySet()) {
+                System.out.println(key + " = " + untrusted.getHeader().get(key));
+            }
+            Claims claims = untrusted.getBody();
+            for (String key : claims.keySet()) {
+                System.out.println(key + " = " + claims.get(key));
+            }
+            if (claims.get("clientId").toString().equals(clientId) && claims.getExpiration().after(new Date()) && claims.getIssuedAt().before(new Date())){
+                return true;
+            }else{
+                return false;
+            }
+        }catch(JwtException e){
+            System.out.println("Error: " + e.getMessage());
+            return false;
+        }
+
+    }
+
     public static Object[] decodeJWT(String jwt, String secret_key, String clientId) {
         CharSequence charJwt = jwt;
         //This line will throw an exception if it is not a signed JWS (as expected)
@@ -184,4 +244,27 @@ public class AuthTools {
     public static String ObtenerTokenBearer(String token){
         return token.substring(Sistema.POSICION_TOKEN).trim();
     }
+
+    /*private ServerWebExchange exchange;
+
+    public AuthenticationManager(ServerWebExchange exchange) {
+        this.exchange = exchange;
+    }
+
+    @Override
+    public Mono<Authentication> authenticate(Authentication authentication) {
+        String authToken = authentication.getCredentials().toString();
+        String clientId = this.exchange.getRequest().getHeaders().getFirst("clientId");
+        if (authToken != null) {
+            try {
+                Object[] claims = decodeJWT(authToken, clientId, Sistema.CLIENT_ID);
+                if (claims != null) {
+                    return Mono.just(authentication);
+                }
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
+        return null;
+    }*/
 }
