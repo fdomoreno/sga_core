@@ -12,16 +12,16 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties.Jwt;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.stereotype.Component;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonSerializable.Base;
 
-import co.edu.usa.talentotech.sga.models.entities.User;
-import co.edu.usa.talentotech.sga.repositories.UserCrudRepository;
 import co.edu.usa.talentotech.sga.utils.constans.Sistema;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Header;
@@ -141,50 +141,42 @@ public class AuthTools {
         return Base64.getEncoder().encodeToString(cadena.getBytes());
     }
 
-    public static Boolean verifyJWT(String jwt, String clientId){
-        //CharSequence charJwt = ObtenerTokenBearer(jwt);
-        //This line will throw an exception if it is not a signed JWS (as expected)
+    /**
+     * Metodo para verificarClaims un JWT
+     */
+    public static Boolean verifyJwt(String jwt, String clientId) {
+        String charJwt = ObtenerTokenBearer(jwt);
         try{
-            // User usuario = repository.findByClientId(clientId).get();
-            // if (usuario == null){
-            //     return false;
-            // }
-            // Claims claims = Jwts.parser()
-            // .verifyWith(getSigningSecretKey(usuario.getClientSecret(), clientId))
-            // .build()
-            // .parseSignedClaims(charJwt).getPayload();
-            // if (claims.get("clientId").toString().equals(clientId) && claims.getExpiration().after(new Date()) && claims.getIssuedAt().before(new Date())){
-            //     return true;
-            // }else{
-            //     return false;
-            // }
-            String charJwt = ObtenerTokenBearer(jwt);
             String[] splitToken = charJwt.split("\\.");
-            Base64.Decoder decoder = Base64.getDecoder();
-            String header = new String(decoder.decode(splitToken[0]));
-            String payload = new String(decoder.decode(splitToken[1]));
-            System.out.println("Header: " + header);
-            System.out.println("Payload: " + payload);
-            int i = charJwt.lastIndexOf('.');
-            String withoutSignature = charJwt.substring(0, i+1);
-            io.jsonwebtoken.Jwt<Header, Claims> untrusted = Jwts.parser().build().parseClaimsJwt(withoutSignature);
-            for (String key : untrusted.getHeader().keySet()) {
-                System.out.println(key + " = " + untrusted.getHeader().get(key));
-            }
-            Claims claims = untrusted.getBody();
-            for (String key : claims.keySet()) {
-                System.out.println(key + " = " + claims.get(key));
-            }
-            if (claims.get("clientId").toString().equals(clientId) && claims.getExpiration().after(new Date()) && claims.getIssuedAt().before(new Date())){
-                return true;
-            }else{
+            if(splitToken.length != 3){
                 return false;
             }
+            Base64.Decoder decoder = Base64.getDecoder();
+            String payload = new String(decoder.decode(splitToken[1]));
+            HashMap<String, Object> map = new ObjectMapper().readValue(payload, HashMap.class);
+            if(!payload.contains(clientId)){
+                return false;
+            }
+            long exp = Long.parseLong(map.get("exp").toString());
+            long now = System.currentTimeMillis() / 1000;
+            if(now > exp){
+                return false;
+            }
+            long iat = Long.parseLong(map.get("iat").toString());
+            if(now < iat){
+                return false;
+            }
+            return true;
         }catch(JwtException e){
-            System.out.println("Error: " + e.getMessage());
+            System.out.println("Error JWTException: " + e.getMessage());
+            return false;
+        }catch(JsonMappingException e){
+            System.out.println("Error en deserialización en mapa: " + e.getMessage());
+            return false;
+        }catch(JsonProcessingException e){
+            System.out.println("Error en proceso de Deserialización en Mapa: " + e.getMessage());
             return false;
         }
-
     }
 
     public static Object[] decodeJWT(String jwt, String secret_key, String clientId) {
