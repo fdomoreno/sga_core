@@ -9,9 +9,15 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonSerializable.Base;
 
 import co.edu.usa.talentotech.sga.utils.constans.Sistema;
 import io.jsonwebtoken.Claims;
@@ -125,6 +131,44 @@ public class AuthTools {
     public static String StringToBase64(String cadena) {
         // TODO Auto-generated constructor stub
         return Base64.getEncoder().encodeToString(cadena.getBytes());
+    }
+
+    /**
+     * Metodo para verificarClaims un JWT
+     */
+    public static Boolean verifyJwt(String jwt, String clientId) {
+        String charJwt = ObtenerTokenBearer(jwt);
+        try{
+            String[] splitToken = charJwt.split("\\.");
+            if(splitToken.length != 3){
+                return false;
+            }
+            Base64.Decoder decoder = Base64.getDecoder();
+            String payload = new String(decoder.decode(splitToken[1]));
+            HashMap<String, Object> map = new ObjectMapper().readValue(payload, HashMap.class);
+            if(!payload.contains(clientId)){
+                return false;
+            }
+            long exp = Long.parseLong(map.get("exp").toString());
+            long now = System.currentTimeMillis() / 1000;
+            if(now > exp){
+                return false;
+            }
+            long iat = Long.parseLong(map.get("iat").toString());
+            if(now < iat){
+                return false;
+            }
+            return true;
+        }catch(JwtException e){
+            System.out.println("Error JWTException: " + e.getMessage());
+            return false;
+        }catch(JsonMappingException e){
+            System.out.println("Error en deserialización en mapa: " + e.getMessage());
+            return false;
+        }catch(JsonProcessingException e){
+            System.out.println("Error en proceso de Deserialización en Mapa: " + e.getMessage());
+            return false;
+        }
     }
 
     public static Object[] decodeJWT(String jwt, String secret_key, String clientId) {
