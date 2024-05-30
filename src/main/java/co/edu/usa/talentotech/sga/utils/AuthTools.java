@@ -35,13 +35,9 @@ import io.jsonwebtoken.security.Keys;
  * Created on May 03, 2024
  * @author fdomoreno
  */
-@Component
-@EnableJpaRepositories
 public class AuthTools {
 
 
-    @Autowired
-    private static UserCrudRepository repository;
     /**
      * Metodo que encripta una cadena de texto
      * @param cadena
