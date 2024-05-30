@@ -141,8 +141,14 @@ public class AuthTools {
      * Metodo para verificarClaims un JWT
      */
     public static Boolean verifyJwt(String jwt, String clientId) {
-        String charJwt = ObtenerTokenBearer(jwt);
         try{
+            if (clientId == null || clientId.isEmpty()){
+                return false;
+            }
+            if (jwt == null || jwt.isEmpty()) {
+                return false;
+            }
+            String charJwt = ObtenerTokenBearer(jwt);
             String[] splitToken = charJwt.split("\\.");
             if(splitToken.length != 3){
                 return false;
