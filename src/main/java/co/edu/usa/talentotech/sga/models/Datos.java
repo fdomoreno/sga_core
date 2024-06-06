@@ -1,6 +1,7 @@
 package co.edu.usa.talentotech.sga.models;
 
 import com.fasterxml.jackson.annotation.JsonIncludeProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -26,10 +27,10 @@ import lombok.NoArgsConstructor;
  * @author fdomoreno
  */
 @JsonIgnoreProperties(value = {
-    "fechaActualizacion",
-    "fechaCreacion",
-    "usuarioActualizacion",
-    "usuarioCreacion"
+    "fecha_actualizacion",
+    "fecha_creacion",
+    "usuario_actualizacion",
+    "usuario_creacion"
 })
 @Data
 @NoArgsConstructor
@@ -38,8 +39,10 @@ import lombok.NoArgsConstructor;
 @MappedSuperclass
 public abstract class Datos<T> implements Serializable {
     @Column(name = "fecha_creacion")
+    @JsonProperty("fecha_creacion")
     private Timestamp fechaCreacion;
     @Column(name = "fecha_actualizacion")
+    @JsonProperty("fecha_actualizacion")
     private Timestamp fechaActualizacion;
     @JsonIncludeProperties(value = {
         "id",
@@ -47,6 +50,7 @@ public abstract class Datos<T> implements Serializable {
         "correo"
     })
     @Column(name = "usuario_creacion")
+    @JsonProperty("usuario_creacion")
     private T usuarioCreacion;
     @JsonIncludeProperties(value = {
         "id",
@@ -54,5 +58,6 @@ public abstract class Datos<T> implements Serializable {
         "correo"
     })
     @Column(name = "usuario_actualizacion")
+    @JsonProperty("usuario_actualizacion")
     private T usuarioActualizacion;
 }
